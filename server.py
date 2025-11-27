@@ -21,8 +21,24 @@ def handle_client(client_socket, address):
         method, path, _ = request_line.split()
 
         if method == "GET":
-            respones_body = f"""
-
+            response_body = f"""
+            <html>
+            <head>
+                <title>LAN Paste</title>
+                <style>
+                    body {{ font-family: sans-serif; padding: 20px; }}
+                    textarea {{ width: 100%; height: 300px; font-size: 16px; }}
+                    button {{ padding: 8px 20px; margin-top: 10px; }}
+                </style>
+            </head>
+            <body>
+                <h2>LAN Paste</h2>
+                <form method="POST">
+                    <textarea name="text">{paste_text}</textarea><br>
+                    <button type="submit">Save</button>
+                </form>
+            </body>
+            </html>
             """
 
 def start_server(host='0.0.0.0', port=8000):

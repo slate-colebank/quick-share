@@ -9,6 +9,21 @@ lock = threading.Lock()
 
 def handle_client(client_socket, address):
     print("handling client...")
+    try:
+        data = client_socket.recv(4096).decode("utf-8", errors="ignore")
+        if not data:
+            client_socket.close()
+            return
+
+        headers, _, body = data.partition("\r\n\r\n")
+
+        request_line = headers.split("\r\n")[0]
+        method, path, _ = request_line.split()
+
+        if method == "GET":
+            respones_body = f"""
+
+            """
 
 def start_server(host='0.0.0.0', port=8000):
     # start start

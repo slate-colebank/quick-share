@@ -10,6 +10,7 @@ paste_text = ""
 
 def handle_client(client_socket, address):
     print("handling client...")
+    global paste_text
     try:
         data = client_socket.recv(4096).decode("utf-8", errors="ignore")
         if not data:

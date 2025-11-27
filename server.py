@@ -6,6 +6,7 @@ from urllib.parse import parse_qs
 from collections import deque
 
 lock = threading.Lock()
+paste_text = ""
 
 def handle_client(client_socket, address):
     print("handling client...")

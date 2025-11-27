@@ -44,6 +44,24 @@ def handle_client(client_socket, address):
             client_socket.sendall(response.encode())
             return
 
+        if method == "POST":
+            from urllib.parse import parse_qs
+            form = parse_qs(body)
+            paste_text = form.get("text", [""])[0]
+
+            response = (
+                "HTTP/1.1 303 See Other\r\n"
+                "Location: /\r\n"
+                "Connection: close\r\n\r\n"
+            )
+            client_socket.sendall(response.encode())
+            return
+
+    except Exception as e:
+        print("error:", e)
+    finally:
+        client_socket.close()
+
 def start_server(host='0.0.0.0', port=8000):
     # start start
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

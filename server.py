@@ -5,9 +5,10 @@ from datetime import datetime
 from urllib.parse import parse_qs
 from collections import deque
 
-lock = threading.Lock()
-paste_text = ""
 
+paste_text = "" # holds the content of the text window
+
+# handle a client connection
 def handle_client(client_socket, address):
     print("handling client...")
     global paste_text
@@ -22,12 +23,13 @@ def handle_client(client_socket, address):
         request_line = headers.split("\r\n")[0]
         method, path, _ = request_line.split()
 
+        # access the webpage
         if method == "GET":
             page = f"""
             <html>
             <body>
                 <form method="POST">
-                    <textarea name="text" style="width:100%;height:95vh;">{paste_text}</textarea>
+                    <textarea name="text" style="width:50%;height:95vh;">{paste_text}</textarea>
                     <br>
                     <button type="submit">Save</button>
                 </form>
@@ -46,8 +48,9 @@ def handle_client(client_socket, address):
             client_socket.sendall(response.encode())
             return
 
+        # update the contents of the text window (server side)
         if method == "POST":
-            print("POSTING")
+            print("saving...")
             from urllib.parse import parse_qs
             form = parse_qs(body)
             paste_text = form.get("text", [""])[0]

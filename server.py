@@ -47,6 +47,7 @@ def handle_client(client_socket, address):
             return
 
         if method == "POST":
+            print("POSTING")
             from urllib.parse import parse_qs
             form = parse_qs(body)
             paste_text = form.get("text", [""])[0]

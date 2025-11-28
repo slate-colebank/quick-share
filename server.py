@@ -1,3 +1,5 @@
+import os
+import re
 import socket
 import threading
 import json
@@ -10,23 +12,61 @@ paste_text = "" # holds the content of the text window
 uploaded_files = [] # holds the current uploaded files
 
 # handle file upload
-handle_file_upload(headers, body, client_socket):
+def handle_file_upload(client_socket, raw_data):
+    global uploaded_files
+    
+    # Parse headers (still UTF-8)
+    header_end = raw_data.find(b"\r\n\r\n")
+    headers = raw_data[:header_end].decode("utf-8", errors="ignore")
+    body = raw_data[header_end + 4:]  # Keep body as bytes
+    
+    # Extract boundary
     m = re.search(r"boundary=(.+)", headers)
     if not m:
-        client_socket.sendall(
-            "Bad Request"
-        )
+        client_socket.sendall(b"HTTP/1.1 400 Bad Request\r\n\r\nNo boundary")
         return
     
-    boundary = m.group(1)
-
-    parts = body.split("--" + boundary)
-
-    filename = None
-    file_bytes = None
-
+    boundary = ("--" + m.group(1).strip()).encode()
+    
+    # Split on boundary
+    parts = body.split(boundary)
+    
     for part in parts:
-        if 'Content-Disposition': in part and 'filename="' in part
+        if b'Content-Disposition:' in part and b'filename="' in part:
+            # Extract filename from headers
+            part_header_end = part.find(b"\r\n\r\n")
+            part_headers = part[:part_header_end].decode("utf-8", errors="ignore")
+            
+            name_match = re.search(r'filename="(.+?)"', part_headers)
+            if not name_match:
+                continue
+            
+            filename = name_match.group(1)
+            
+            # Extract file data (everything after blank line)
+            file_data = part[part_header_end + 4:]
+            
+            # Remove trailing CRLF
+            if file_data.endswith(b"\r\n"):
+                file_data = file_data[:-2]
+            
+            # Save file
+            save_path = os.path.join("uploads", filename)
+            os.makedirs("uploads", exist_ok=True)
+            
+            with open(save_path, "wb") as f:
+                f.write(file_data)
+            
+            uploaded_files.append(filename)
+            print(f"Uploaded: {filename}")
+    
+    # Redirect
+    response = (
+        "HTTP/1.1 303 See Other\r\n"
+        "Location: /\r\n"
+        "Connection: close\r\n\r\n"
+    )
+    client_socket.sendall(response.encode())
 
 # handle a client connection
 def handle_client(client_socket, address):
@@ -111,7 +151,7 @@ def handle_client(client_socket, address):
         if method == "POST":
             if path == "/upload":
                 if "Content-Typ: multipart/form-data" in headers:
-                    handle_file_upload(headers, body, client_socket)
+                    handle_file_upload(body, client_socket)
                     return
 
             

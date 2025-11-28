@@ -9,6 +9,25 @@ from collections import deque
 paste_text = "" # holds the content of the text window
 uploaded_files = [] # holds the current uploaded files
 
+# handle file upload
+handle_file_upload(headers, body, client_socket):
+    m = re.search(r"boundary=(.+)", headers)
+    if not m:
+        client_socket.sendall(
+            "Bad Request"
+        )
+        return
+    
+    boundary = m.group(1)
+
+    parts = body.split("--" + boundary)
+
+    filename = None
+    file_bytes = None
+
+    for part in parts:
+        if 'Content-Disposition': in part and 'filename="' in part
+
 # handle a client connection
 def handle_client(client_socket, address):
     print("handling client...")
@@ -64,11 +83,18 @@ def handle_client(client_socket, address):
                     </div>
                     <div class="right-half">
                         <h2>Files</h2>
+                        <form method="POST" enctype="multipart/form-data" action="/upload">
+                            <input type="file" name="file">
+                            <br><br>
+                            <button type="submit">Upload</button>
+                        </form>
                     </div>
                 </div>
             </body>
             </html>
             """
+
+            page = page.replace("{paste_text}", paste_text)
 
             response = (
                 "HTTP/1.1 200 OK\r\n"
@@ -83,6 +109,12 @@ def handle_client(client_socket, address):
 
         # update the contents of the text window (server side)
         if method == "POST":
+            if path == "/upload":
+                if "Content-Typ: multipart/form-data" in headers:
+                    handle_file_upload(headers, body, client_socket)
+                    return
+
+            
             print("saving...")
             from urllib.parse import parse_qs
             form = parse_qs(body)

@@ -7,6 +7,7 @@ from collections import deque
 
 
 paste_text = "" # holds the content of the text window
+uploaded_files = [] # holds the current uploaded files
 
 # handle a client connection
 def handle_client(client_socket, address):
@@ -25,7 +26,7 @@ def handle_client(client_socket, address):
 
         # access the webpage
         if method == "GET":
-            page = f"""
+            page = """
             <!DOCTYPE html>
             <html>
             <head>
@@ -36,7 +37,7 @@ def handle_client(client_socket, address):
                     }
                     .container {
                         display: flex;
-                        height: 100vh;
+                        height: 70vh;
                     }
                     .left-half {
                         width: 50%;
@@ -52,16 +53,18 @@ def handle_client(client_socket, address):
             </head>
             <body>
                 <h1>Quickshare</h1>
-                <div class="left-half">
-                    <h2>Text</h2>
-                    <form method="POST">
-                        <textarea name="text" style="width:50%;height:75vh;">{paste_text}</textarea>
-                        <br>
-                        <button type="submit">Save</button>
-                    </form>
-                </div>
-                <div class="right-half">
-                    <h2>Files</h2>
+                <div class="container">
+                    <div class="left-half">
+                        <h2>Text</h2>
+                        <form method="POST">
+                            <textarea name="text" style="width:100%;height:75vh;">{paste_text}</textarea>
+                            <br>
+                            <button type="submit">Save</button>
+                        </form>
+                    </div>
+                    <div class="right-half">
+                        <h2>Files</h2>
+                    </div>
                 </div>
             </body>
             </html>

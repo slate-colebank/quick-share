@@ -73,15 +73,27 @@ def handle_client(client_socket, address):
     print("handling client...")
     global paste_text
     try:
-        data = client_socket.recv(4096).decode("utf-8", errors="ignore")
-        if not data:
+        # Read raw data as bytes first
+        raw_data = client_socket.recv(8192)
+        if not raw_data:
             client_socket.close()
             return
 
-        headers, _, body = data.partition("\r\n\r\n")
-
+        # Parse headers only
+        header_end = raw_data.find(b"\r\n\r\n")
+        headers = raw_data[:header_end].decode("utf-8", errors="ignore")
+        
         request_line = headers.split("\r\n")[0]
         method, path, _ = request_line.split()
+
+        # Handle file upload
+        if method == "POST" and path == "/upload":
+            if "Content-Type: multipart/form-data" in headers:
+                handle_file_upload(client_socket, raw_data)
+                return
+
+        # For non-file requests, decode body as text
+        body = raw_data[header_end + 4:].decode("utf-8", errors="ignore")
 
         # access the webpage
         if method == "GET":
@@ -149,12 +161,6 @@ def handle_client(client_socket, address):
 
         # update the contents of the text window (server side)
         if method == "POST":
-            if path == "/upload":
-                if "Content-Typ: multipart/form-data" in headers:
-                    handle_file_upload(body, client_socket)
-                    return
-
-            
             print("saving...")
             from urllib.parse import parse_qs
             form = parse_qs(body)

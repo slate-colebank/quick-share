@@ -26,13 +26,43 @@ def handle_client(client_socket, address):
         # access the webpage
         if method == "GET":
             page = f"""
+            <!DOCTYPE html>
             <html>
+            <head>
+                <style>
+                    body {
+                        margin: 0;
+                        padding: 0;
+                    }
+                    .container {
+                        display: flex;
+                        height: 100vh;
+                    }
+                    .left-half {
+                        width: 50%;
+                        background-color: #f0f0f0;
+                        padding: 20px;
+                    }
+                    .right-half {
+                        width: 50%;
+                        background-color: #f0f0f0;
+                        padding: 20px;
+                    }
+                </style>
+            </head>
             <body>
-                <form method="POST">
-                    <textarea name="text" style="width:50%;height:95vh;">{paste_text}</textarea>
-                    <br>
-                    <button type="submit">Save</button>
-                </form>
+                <h1>Quickshare</h1>
+                <div class="left-half">
+                    <h2>Text</h2>
+                    <form method="POST">
+                        <textarea name="text" style="width:50%;height:75vh;">{paste_text}</textarea>
+                        <br>
+                        <button type="submit">Save</button>
+                    </form>
+                </div>
+                <div class="right-half">
+                    <h2>Files</h2>
+                </div>
             </body>
             </html>
             """

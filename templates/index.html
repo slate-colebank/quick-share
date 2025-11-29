@@ -20,6 +20,31 @@
 						background-color: #f0f0f0;
 						padding: 20px;
 				}
+				.file-list {
+						margin-top: 20px;
+						max-height: 50vh;
+						overflow-y: auto;
+				}
+				.file-item {
+						background-color: white;
+						padding: 10px;
+						margin: 5px 0;
+						border-radius: 5px;
+						display: flex;
+						justify-content: space-between;
+						align-items: center;
+				}
+				.file-item button {
+						background-color: #4CAF50;
+						color: white;
+						border: none;
+						padding: 5px 15px;
+						border-radius: 3px;
+						cursor: pointer;
+				}
+				.file-item button:hover {
+						background-color: #45a049;
+				}
 		</style>
 </head>
 <body>
@@ -42,13 +67,17 @@
 
 								<div class="file-list" id="fileList">
 								    <h3>Downloadable Files:</h3>
-										<div id="filesContainer"</div>
+										<div id="filesContainer"></div>
 								</div>
 
 								<script>
-									const uploadBtn = document.getElementById('uploadBtn')
-									const fileInput = document.getElementById('fileInput')
-									const status = document.getElementById('uploadStatus')
+									const uploadBtn = document.getElementById('uploadBtn');
+									const fileInput = document.getElementById('fileInput');
+									const status = document.getElementById('uploadStatus');
+									const filesContainer = document.getElementById('filesContainer');
+
+									// Load files when page loads
+									loadFiles();
 
 									uploadBtn.addEventListener('click', async () => {
 										console.log("upload clicked");
@@ -68,11 +97,13 @@
 											const response = await fetch('/upload', {
 												method: 'POST',
 												body: formData
-											})
+											});
 											const result = await response.json();
 
 											if (response.ok) {
 												status.textContent = 'Uploaded file';
+												fileInput.value = '';  // Clear input
+												loadFiles();  // Refresh file list
 											} else {
 												status.textContent = 'Failed to upload file, ' + result.error;
 											}
@@ -81,19 +112,32 @@
 										}
 									});
 
+									// Function to load files from server
+									async function loadFiles() {
+										try {
+											const response = await fetch('/files');
+											const result = await response.json();
+
+											if (response.ok) {
+												displayFiles(result.files);
+											}
+										} catch (error) {
+											console.error('Error loading files:', error);
+										}
+									}
+
 									function displayFiles(files) {
 										if (files.length === 0) {
-											filesContainer.innerHTML = '<p>No files</p>'
+											filesContainer.innerHTML = '<p>No files</p>';
 											return;
 										}
 
-										filesContainer.innerHTML = files.map(filname => '
+										filesContainer.innerHTML = files.map(filename => `
 											<div class="file-item">
 												<span>${filename}</span>
-												<button onclick="downloadFile('${filename}')"Download</button>
+												<button onclick="downloadFile('${filename}')">Download</button>
 											</div>
-											')
-										').join(");
+										`).join('');
 									}
 
 									function downloadFile(filename) {

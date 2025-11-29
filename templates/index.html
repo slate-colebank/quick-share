@@ -35,10 +35,15 @@
 				</div>
 				<div class="right-half">
 						<h2>Files</h2>
-								<input type="file" id="fileInput" name="file">
+								<input type="file" id="fileInput" name="file" multiple>
 								<br><br>
 								<button id="uploadBtn">Upload</button>
 								<div id="uploadStatus"></div>
+
+								<div class="file-list" id="fileList">
+								    <h3>Downloadable Files:</h3>
+										<div id="filesContainer"</div>
+								</div>
 
 								<script>
 									const uploadBtn = document.getElementById('uploadBtn')
@@ -46,7 +51,7 @@
 									const status = document.getElementById('uploadStatus')
 
 									uploadBtn.addEventListener('click', async () => {
-										print("upload clicked");
+										console.log("upload clicked");
 										const files = fileInput.files;
 
 										if (files.length === 0) {
@@ -55,12 +60,16 @@
 										}
 
 										const formData = new FormData();
-										for (let i = 0; i < files.length;  ++) {
+										for (let i = 0; i < files.length; i++) {
 											formData.append('files', files[i]);
 										}
 
 										try {
-											const response = await response.json();
+											const response = await fetch('/upload', {
+												method: 'POST',
+												body: formData
+											})
+											const result = await response.json();
 
 											if (response.ok) {
 												status.textContent = 'Uploaded file';
@@ -71,8 +80,26 @@
 											status.textContent = 'ERROR: ' + error.message;
 										}
 									});
+
+									function displayFiles(files) {
+										if (files.length === 0) {
+											filesContainer.innerHTML = '<p>No files</p>'
+											return;
+										}
+
+										filesContainer.innerHTML = files.map(filname => '
+											<div class="file-item">
+												<span>${filename}</span>
+												<button onclick="downloadFile('${filename}')"Download</button>
+											</div>
+											')
+										').join(");
+									}
+
+									function downloadFile(filename) {
+										window.location.href = '/download/' + encodeURIComponent(filename);
+									}
 								</script>
-						</form>
 				</div>
 		</div>
 </body>

@@ -2,6 +2,7 @@ import os
 import re
 import socket
 import threading
+import requests
 import json
 from datetime import datetime
 from urllib.parse import parse_qs
@@ -12,61 +13,54 @@ paste_text = "" # holds the content of the text window
 uploaded_files = [] # holds the current uploaded files
 
 # handle file upload
-def handle_file_upload(client_socket, raw_data):
-    global uploaded_files
-    
-    # Parse headers (still UTF-8)
-    header_end = raw_data.find(b"\r\n\r\n")
-    headers = raw_data[:header_end].decode("utf-8", errors="ignore")
-    body = raw_data[header_end + 4:]  # Keep body as bytes
-    
-    # Extract boundary
+# def handle_file_upload(client_socket, raw_data):
+def handle_file_upload(headers, body, client_socket):
     m = re.search(r"boundary=(.+)", headers)
     if not m:
-        client_socket.sendall(b"HTTP/1.1 400 Bad Request\r\n\r\nNo boundary")
         return
-    
-    boundary = ("--" + m.group(1).strip()).encode()
-    
-    # Split on boundary
-    parts = body.split(boundary)
-    
+
+    boundary = m.group(1)
+    parts = body.split("--" + boundary)
+
+    filename = None
+    file_bytes = None
+
     for part in parts:
-        if b'Content-Disposition:' in part and b'filename="' in part:
-            # Extract filename from headers
-            part_header_end = part.find(b"\r\n\r\n")
-            part_headers = part[:part_header_end].decode("utf-8", errors="ignore")
-            
-            name_match = re.search(r'filename="(.+?)"', part_headers)
-            if not name_match:
-                continue
-            
-            filename = name_match.group(1)
-            
-            # Extract file data (everything after blank line)
-            file_data = part[part_header_end + 4:]
-            
-            # Remove trailing CRLF
-            if file_data.endswith(b"\r\n"):
-                file_data = file_data[:-2]
-            
-            # Save file
-            save_path = os.path.join("uploads", filename)
-            os.makedirs("uploads", exist_ok=True)
-            
-            with open(save_path, "wb") as f:
-                f.write(file_data)
-            
-            uploaded_files.append(filename)
-            print(f"Uploaded: {filename}")
-    
-    # Redirect
+        if 'Content-Disposition:' in part and 'filename=' in part:
+
+            # get filename
+            name_match = re.search(r'filename="(.?)"', part)
+            if name_match:
+                filename = name_match.group(1)
+
+            # get data
+            if "\r\n\r\n" in part:
+                file_data = part.split("\r\n\r\n", 1)[1]
+
+                file_data = file_data.rsplit("\r\n", 1)[0]
+
+                file_bytes = file_data.encode("latin1", errors="ignore")
+
+        if not filename or file_bytes is None:
+            return
+
+        with open(filename, "wb") as f:
+            f.write(file_bytes)
+
+    uploaded_files.append(filename)
+
+    print(f"Uploaded: {filename}")
+
     response = (
-        "HTTP/1.1 303 See Other\r\n"
-        "Location: /\r\n"
-        "Connection: close\r\n\r\n"
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: text/html\r\n"
+        f"Content-Length: {len(page.encode())}\r\n"
+        "Connection: close\r\n"
+        "\r\n" +
+        page
     )
     client_socket.sendall(response.encode())
+
 
 # handle a client connection
 def handle_client(client_socket, address):
@@ -89,7 +83,7 @@ def handle_client(client_socket, address):
         # Handle file upload
         if method == "POST" and path == "/upload":
             if "Content-Type: multipart/form-data" in headers:
-                handle_file_upload(client_socket, raw_data)
+                handle_file_upload(headers, raw_data, client_socket)
                 return
 
         # For non-file requests, decode body as text

@@ -6,11 +6,23 @@ app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+TEXT_FILE = 'text_content.txt'
 
-@app.route("/")
-
+@app.route("/", methods=['GET', 'POST'])
 def index():
-    # return "<p>Hello, World</p>"
+    paste_text = ""
+    
+    # save text content
+    if request.method == 'POST' and 'text' in request.form:
+        text_content = request.form['text']
+        with open(TEXT_FILE, 'w') as f:
+            f.write(text_content)
+        paste_text = text_content
+    else:
+        if os.path.exists(TEXT_FILE):
+            with open(TEXT_FILE, 'r') as f:
+                paste_text = f.read()
+
     return render_template('index.html')
 
 @app.route('/upload', methods=['POST'])

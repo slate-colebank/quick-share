@@ -11,8 +11,6 @@ Quick Share is a lightweight, Flask-based tool for fast text and file sharing ov
 - Extremely lightweight — only requires **Flask**  
 - Simple UI, no setup, no accounts, no external services
 
-Note: this tool is meant to be as efficient as possible, not as secure as possible. Do not upload sensitive data to quick share.
-
 ---
 
 ## Installation
